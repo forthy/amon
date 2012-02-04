@@ -25,6 +25,7 @@ import org.jboss.netty.handler.codec.http.HttpVersion._
 import org.jboss.netty.handler.codec.http.HttpResponseStatus._
 import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names._
+import org.jboss.netty.channel.ChannelFutureListener
 
 object Handler {
   def respond(request: Request, s: String) {
@@ -32,6 +33,7 @@ object Handler {
     val content = ChannelBuffers.copiedBuffer(s.getBytes)
     response.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
     response.setContent(content)
-    request.context.getChannel.write(response)
+    val future = request.context.getChannel.write(response)
+    future.addListener(ChannelFutureListener.CLOSE)
   }
 }

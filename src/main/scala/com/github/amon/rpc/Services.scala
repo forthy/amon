@@ -31,8 +31,8 @@ class Services(port: Int) {
       Executors.newCachedThreadPool(),
       Executors.newCachedThreadPool()))
 
-  def configure(handler: Request => Any) {
-    bootstrap.setPipelineFactory(new ServicesPipelineFactory(new ServicesHandler(handler)))
+  def configure(handler: Request => Response) {
+    bootstrap.setPipelineFactory(new ServicesPipelineFactory(handler))
   }
 
   def start() {

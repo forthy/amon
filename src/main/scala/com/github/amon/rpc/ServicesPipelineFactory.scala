@@ -24,7 +24,7 @@ import org.jboss.netty.channel.ChannelPipelineFactory
 import org.jboss.netty.handler.codec.http.{HttpResponseEncoder, HttpChunkAggregator, HttpRequestDecoder}
 import org.jboss.netty.handler.stream.ChunkedWriteHandler
 
-class ServicesPipelineFactory(handler: ServicesHandler) extends ChannelPipelineFactory {
+class ServicesPipelineFactory(handler: Request => Response) extends ChannelPipelineFactory {
 
   def getPipeline = {
     val pipeline = org.jboss.netty.channel.Channels.pipeline()
@@ -38,7 +38,7 @@ class ServicesPipelineFactory(handler: ServicesHandler) extends ChannelPipelineF
     pipeline.addLast("aggregator", new HttpChunkAggregator(65536))
     pipeline.addLast("encoder", new HttpResponseEncoder())
     pipeline.addLast("chunkedWriter", new ChunkedWriteHandler())
-    pipeline.addLast("handler", handler)
+    pipeline.addLast("handler", new ServicesHandler(handler))
 
     pipeline
   }

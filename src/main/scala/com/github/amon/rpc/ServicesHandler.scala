@@ -21,20 +21,49 @@
 package com.github.amon.rpc
 
 import org.jboss.netty.channel._
-import org.jboss.netty.handler.codec.http.{HttpRequest}
+import org.jboss.netty.handler.codec.http.HttpVersion._
+import org.jboss.netty.handler.codec.http.HttpResponseStatus._
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names._
+import org.jboss.netty.handler.codec.http.{HttpChunk, DefaultHttpResponse, HttpRequest}
+import java.io.ByteArrayOutputStream
+import org.jboss.netty.buffer.{ChannelBuffers}
 
-class ServicesHandler(handler: Request => Any) extends SimpleChannelUpstreamHandler with Logging {
+class ServicesHandler(handler: Request => Response) extends SimpleChannelUpstreamHandler with Logging {
 
-  override def messageReceived(ctx: ChannelHandlerContext, e: MessageEvent) {
-    e.getMessage match {
-      case request: HttpRequest => {
-        handler(Request(request, ctx))
+  var readingChunks = false
+  val buf = new ByteArrayOutputStream()
+
+  override def messageReceived(ctx: ChannelHandlerContext, event: MessageEvent) {
+    if (!readingChunks) {
+      event.getMessage match {
+        case request: HttpRequest =>
+          if (request.isChunked)
+            readingChunks = true
+          else
+            writeResponse(event, handler(Request(request, ctx, request.getContent.array())))
+      }
+    } else {
+      event.getMessage match {
+        case chunk: HttpChunk =>
+          if (chunk.isLast) {
+            readingChunks = false
+            writeResponse(event, handler(Request(event.getMessage.asInstanceOf[HttpRequest], ctx, buf.toByteArray)))
+          } else buf.write(chunk.getContent.array())
       }
     }
   }
 
+  private def writeResponse(event: MessageEvent, rs: Response) {
+    val content = ChannelBuffers.copiedBuffer(rs.content)
+    val response = new DefaultHttpResponse(HTTP_1_1, OK)
+    response.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
+    response.setContent(content)
+    val future = event.getChannel.write(response)
+    future.addListener(ChannelFutureListener.CLOSE)
+  }
+
   override def exceptionCaught(ctx: ChannelHandlerContext, e: ExceptionEvent) {
-    warn("Unexpected exception from downstream %s".format(e.getCause))
+    warn("Unexpected exception from downstream: %s".format(e.getCause))
     e.getChannel.close()
   }
 }

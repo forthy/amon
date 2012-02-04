@@ -30,9 +30,13 @@ class BasicSuite extends FunSuite with ShouldMatchers with BeforeAndAfterEach {
     services.configure {
       request =>
         request match {
-          case GET(Path(Seg("record" :: id :: Nil))) => {
-            println("Got " + id)
-            Handler.respond(request, "been called with " + id)
+          case GET(Path(Seg("db" :: id :: Nil))) => {
+            println("Get " + id)
+            Response("been called with get/" + id)
+          }
+          case POST(Path(Seg("db" :: id :: Nil))) => {
+            println("Post " + id)
+            Response("been called with post/" + id)
           }
         }
     }
@@ -40,7 +44,8 @@ class BasicSuite extends FunSuite with ShouldMatchers with BeforeAndAfterEach {
     services.start()
 
     // println(EntityUtils.toString(HttpUtil.get("http://localhost:8080/").getEntity))
-    println(HttpUtil.get("http://localhost:8080/record/666"))
+    println(HttpUtil.get("http://localhost:8080/db/666"))
+    println(HttpUtil.post("http://localhost:8080/db/666"))
     services.stop()
 
   }

@@ -23,7 +23,7 @@ package com.github.amon.rpc
 import org.jboss.netty.handler.codec.http.HttpRequest
 import org.jboss.netty.channel.ChannelHandlerContext
 
-case class Request(req: HttpRequest, context: ChannelHandlerContext) {
+case class Request(req: HttpRequest, context: ChannelHandlerContext, content: Array[Byte]) {
   def uri = req.getUri
 
   def method = req.getMethod.getName
