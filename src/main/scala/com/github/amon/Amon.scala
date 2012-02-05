@@ -25,6 +25,7 @@ import cluster.{Server, Clustered}
 import rpc._
 import scopt.OptionParser
 import com.google.common.io.Files
+import bytecask.Bytes._
 
 class Amon(port: Int, dir: String) extends Clustered with Logging {
   val db = new Bytecask(dir)
@@ -35,7 +36,7 @@ class Amon(port: Int, dir: String) extends Clustered with Logging {
       request match {
         case GET(Path(Seg("data" :: id :: Nil))) => {
           debug("get " + id)
-          val value = db.get(id.getBytes)
+          val value = db.get(id) //TODO: fetch remotely
           if (!value.isEmpty)
             BinaryResponse(value.get)
           else
@@ -43,21 +44,26 @@ class Amon(port: Int, dir: String) extends Clustered with Logging {
         }
         case POST(Path(Seg("data" :: id :: Nil))) => {
           debug("post " + id)
-          db.put(id.getBytes, request.content)
-          TextResponse("post: OK".getBytes)
+          db.put(id, request.content) //TODO: replicate
+          TextResponse("post: OK")
         }
         case DELETE(Path(Seg("data" :: id :: Nil))) => {
           debug("delete " + id)
-          val value = db.delete(id.getBytes)
+          val value = db.delete(id) //TODO: replicate
           if (!value.isEmpty)
-            TextResponse("delete: OK".getBytes)
+            TextResponse("delete: OK")
           else
             EmptyResponse(404)
         }
         case GET(Path(Seg("merge" :: Nil))) => {
           debug("merge")
           db.merge()
-          TextResponse("merge: OK".getBytes)
+          TextResponse("merge: OK")
+        }
+        case GET(Path(Seg("ping" :: Nil))) => {
+          debug("ping")
+          db.merge()
+          TextResponse(pingResponse)
         }
       }
   }
@@ -82,6 +88,8 @@ class Amon(port: Int, dir: String) extends Clustered with Logging {
   def membersLost(members: Set[Server]) {
     info("- " + members)
   }
+
+  private def pingResponse = "pong: OK"
 }
 
 object AmonStandalone extends Logging {

@@ -22,6 +22,7 @@ package com.github.amon.rpc
 
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
+import bytecask.Bytes._
 
 class BasicSuite extends FunSuite with ShouldMatchers with BeforeAndAfterEach {
 
@@ -32,11 +33,11 @@ class BasicSuite extends FunSuite with ShouldMatchers with BeforeAndAfterEach {
         request match {
           case GET(Path(Seg("db" :: id :: Nil))) => {
             println("Get " + id)
-            TextResponse(("been called with get/" + id).getBytes)
+            TextResponse("been called with get/" + id)
           }
           case POST(Path(Seg("db" :: id :: Nil))) => {
             println("Post " + id)
-            TextResponse(("been called with post/" + id).getBytes)
+            TextResponse("been called with post/" + id)
           }
         }
     }
