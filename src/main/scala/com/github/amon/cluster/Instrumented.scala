@@ -14,20 +14,27 @@
 * limitations under the License.
 *
 * User: przemek
-* Date: 1/29/12
-* Time: 7:07 PM
+* Date: 7/28/11
+* Time: 8:32 PM
 */
 
-package com.github.amon.rpc
+package com.github.amon.cluster
 
-class Response(val contentType: String, val status: Int = 200, val content: Array[Byte])
+import java.util.concurrent.atomic.AtomicLong
+import com.github.amon.rpc.Logging
 
-//object Response {
-//  def apply(s: String): Response = Response(s.getBytes)
-//}
+trait Instrumented extends Logging {
 
-case class TextResponse(override val content: Array[Byte]) extends Response("text/plain; charset=UTF-8", 200, content)
+  val startTime = new AtomicLong
 
-case class BinaryResponse(override val content: Array[Byte]) extends Response("application/octet-stream", 200, content)
+  def startIntrumenting() {
+    startTime.set(System.currentTimeMillis())
+  }
 
-case class EmptyResponse(override val status: Int) extends Response("", status, Array())
+  def stopIntrumenting() {
+  }
+
+  def uptime = if (startTime.get > 0) System.currentTimeMillis() - startTime.get else 0
+
+  //TODO JMX
+}

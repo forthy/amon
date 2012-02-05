@@ -22,11 +22,10 @@ package com.github.amon.rpc
 
 import org.jboss.netty.channel._
 import org.jboss.netty.handler.codec.http.HttpVersion._
-import org.jboss.netty.handler.codec.http.HttpResponseStatus._
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names._
-import org.jboss.netty.handler.codec.http.{HttpChunk, DefaultHttpResponse, HttpRequest}
 import java.io.ByteArrayOutputStream
 import org.jboss.netty.buffer.{ChannelBuffers}
+import org.jboss.netty.handler.codec.http.{HttpResponseStatus, HttpChunk, DefaultHttpResponse, HttpRequest}
 
 class ServicesHandler(handler: Request => Response) extends SimpleChannelUpstreamHandler with Logging {
 
@@ -55,8 +54,8 @@ class ServicesHandler(handler: Request => Response) extends SimpleChannelUpstrea
 
   private def writeResponse(event: MessageEvent, rs: Response) {
     val content = ChannelBuffers.copiedBuffer(rs.content)
-    val response = new DefaultHttpResponse(HTTP_1_1, OK)
-    response.setHeader(CONTENT_TYPE, "text/plain; charset=UTF-8");
+    val response = new DefaultHttpResponse(HTTP_1_1, HttpResponseStatus.valueOf(rs.status))
+    response.setHeader(CONTENT_TYPE, rs.contentType)
     response.setContent(content)
     val future = event.getChannel.write(response)
     future.addListener(ChannelFutureListener.CLOSE)

@@ -32,11 +32,11 @@ class BasicSuite extends FunSuite with ShouldMatchers with BeforeAndAfterEach {
         request match {
           case GET(Path(Seg("db" :: id :: Nil))) => {
             println("Get " + id)
-            Response("been called with get/" + id)
+            TextResponse(("been called with get/" + id).getBytes)
           }
           case POST(Path(Seg("db" :: id :: Nil))) => {
             println("Post " + id)
-            Response("been called with post/" + id)
+            TextResponse(("been called with post/" + id).getBytes)
           }
         }
     }
