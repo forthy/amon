@@ -18,7 +18,7 @@
 * Time: 6:05 PM
 */
 
-package com.github.amon.rpc
+package com.github.amon
 
 import org.slf4j.LoggerFactory
 

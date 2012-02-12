@@ -21,40 +21,54 @@
 package com.github.amon.client
 
 import com.github.amon.rpc.HttpUtil
+import org.apache.http.util.EntityUtils
+import org.apache.http.HttpResponse
 
 class AmonClient(url: String) {
 
   def put(key: Array[Byte], value: Array[Byte]) = {
     remote {
-      val response = HttpUtil.post(url + "/db/" + key)
+      textualResponse(HttpUtil.post(url + "/db/" + key))
     }
   }
 
   def get(key: Array[Byte]) = {
     remote {
       val response = HttpUtil.get(url + "/db/" + key)
+      val status = response.getStatusLine.getStatusCode
+      if (status == 200) {
+        Right(EntityUtils.toByteArray(response.getEntity))
+      } else Left(status)
     }
   }
 
   def delete(key: Array[Byte]) = {
     remote {
-      val response = HttpUtil.delete(url + "/db/" + key)
+      textualResponse(HttpUtil.delete(url + "/db/" + key))
     }
   }
 
   def merge() {
     remote {
-      val response = HttpUtil.get(url + "/merge")
+      textualResponse(HttpUtil.get(url + "/merge"))
     }
   }
 
   def ping() {
     remote {
-      val response = HttpUtil.get(url + "/ping")
+      textualResponse(HttpUtil.get(url + "/ping"))
     }
   }
 
+  private def textualResponse(response: HttpResponse) = {
+    val status = response.getStatusLine.getStatusCode
+    if (status == 200) {
+      Right(EntityUtils.toString(response.getEntity))
+    } else Left(status)
+  }
+
   private def remote[T](f: => T) {
+    //TODO retry
     try {
       f
     }

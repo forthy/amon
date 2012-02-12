@@ -23,6 +23,9 @@ package com.github.amon.rpc
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.client.methods.{HttpDelete, HttpGet, HttpPost}
 import org.apache.http.entity.{StringEntity, ContentProducer, EntityTemplate}
+import com.github.amon.Logging
+import org.apache.http.util.EntityUtils
+import org.apache.http.{HttpResponse, HttpEntity}
 
 object HttpUtil extends Logging {
 
@@ -33,7 +36,6 @@ object HttpUtil extends Logging {
     val get = new HttpGet(uri)
     val response = client.execute(get)
     debug("http response=" + response)
-    client.getConnectionManager.shutdown()
     response
   }
 
@@ -45,7 +47,6 @@ object HttpUtil extends Logging {
     post.setEntity(entity)
     val response = client.execute(post)
     debug("http response=" + response)
-    client.getConnectionManager.shutdown()
     response
   }
 
@@ -54,7 +55,6 @@ object HttpUtil extends Logging {
     val post = new HttpPost(uri)
     val response = client.execute(post)
     debug("http response=" + response)
-    client.getConnectionManager.shutdown()
     response
   }
 
@@ -64,7 +64,6 @@ object HttpUtil extends Logging {
     post.setEntity(new StringEntity(content))
     val response = client.execute(post)
     debug("http response=" + response)
-    client.getConnectionManager.shutdown()
     response
   }
 
@@ -73,9 +72,13 @@ object HttpUtil extends Logging {
     val delete = new HttpDelete(uri)
     val response = client.execute(delete)
     debug("response=" + response)
-    client.getConnectionManager.shutdown()
     response
   }
 
+  implicit def toRichResponse(response: HttpResponse) = new RichHttpResponse(response)
+}
+
+class RichHttpResponse(response: HttpResponse) {
+  def asString = EntityUtils.toString(response.getEntity)
 }
 

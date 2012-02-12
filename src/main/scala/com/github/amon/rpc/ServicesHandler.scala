@@ -26,6 +26,7 @@ import org.jboss.netty.handler.codec.http.HttpHeaders.Names._
 import java.io.ByteArrayOutputStream
 import org.jboss.netty.buffer.{ChannelBuffers}
 import org.jboss.netty.handler.codec.http.{HttpResponseStatus, HttpChunk, DefaultHttpResponse, HttpRequest}
+import com.github.amon.Logging
 
 class ServicesHandler(handler: Request => Response) extends SimpleChannelUpstreamHandler with Logging {
 

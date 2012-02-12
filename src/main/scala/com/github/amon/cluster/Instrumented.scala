@@ -21,7 +21,7 @@
 package com.github.amon.cluster
 
 import java.util.concurrent.atomic.AtomicLong
-import com.github.amon.rpc.Logging
+import com.github.amon.Logging
 
 trait Instrumented extends Logging {
 

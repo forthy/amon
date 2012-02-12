@@ -23,32 +23,36 @@ package com.github.amon.rpc
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
 import bytecask.Bytes._
+import com.github.amon.rpc.HttpUtil._
 
 class BasicSuite extends FunSuite with ShouldMatchers with BeforeAndAfterEach {
 
-  test("basic foo test") {
+  test("basic textual response test") {
     val services = new Services(8080)
     services.configure {
       request =>
         request match {
           case GET(Path(Seg("db" :: id :: Nil))) => {
             println("Get " + id)
-            TextResponse("been called with get/" + id)
+            TextResponse("called with get/" + id)
           }
           case POST(Path(Seg("db" :: id :: Nil))) => {
             println("Post " + id)
-            TextResponse("been called with post/" + id)
+            TextResponse("called with post/" + id)
           }
         }
     }
-
     services.start()
-
-    // println(EntityUtils.toString(HttpUtil.get("http://localhost:8080/").getEntity))
-    println(HttpUtil.get("http://localhost:8080/db/666"))
-    println(HttpUtil.post("http://localhost:8080/db/666"))
-    services.stop()
-
+    try {
+      var rs = HttpUtil.get("http://localhost:8080/db/666").asString
+      assert(rs.contains("666"))
+      rs = HttpUtil.get("http://localhost:8080/db/666").asString
+      assert(rs.contains("666"))
+      rs = HttpUtil.post("http://localhost:8080/db/666").asString
+      assert(rs.contains("666"))
+    } finally {
+      services.stop()
+    }
   }
 
 }
