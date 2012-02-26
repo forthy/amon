@@ -26,59 +26,73 @@ import org.apache.http.entity.{StringEntity, ContentProducer, EntityTemplate}
 import com.github.amon.Logging
 import org.apache.http.util.EntityUtils
 import org.apache.http.{HttpResponse, HttpEntity}
+import org.apache.http.message.AbstractHttpMessage
 
 object HttpUtil extends Logging {
 
   private def getClient = new DefaultHttpClient()
 
-  def get(uri: String) = {
+  def get(uri: String, headers: Map[String, String] = Map()) = {
     val client = getClient
     val get = new HttpGet(uri)
+    setHeaders(get, headers)
     val response = client.execute(get)
     debug("http response=" + response)
     response
   }
 
-  def post(uri: String, cp: ContentProducer) = {
+  def post(uri: String, cp: ContentProducer, headers: Map[String, String]) = {
     val client = getClient
     val entity = new EntityTemplate(cp)
     entity.setChunked(true)
     val post = new HttpPost(uri)
+    setHeaders(post, headers)
     post.setEntity(entity)
     val response = client.execute(post)
     debug("http response=" + response)
     response
   }
 
-  def post(uri: String) = {
+  def post(uri: String, headers: Map[String, String] = Map()) = {
     val client = getClient
     val post = new HttpPost(uri)
+    setHeaders(post, headers)
     val response = client.execute(post)
     debug("http response=" + response)
     response
   }
 
-  def post(uri: String, content: String) = {
+  def post(uri: String, content: String, headers: Map[String, String]) = {
     val client = getClient
     val post = new HttpPost(uri)
+    setHeaders(post, headers)
     post.setEntity(new StringEntity(content))
     val response = client.execute(post)
     debug("http response=" + response)
     response
   }
 
-  def delete(uri: String) = {
+  def delete(uri: String, headers: Map[String, String] = Map()) = {
     val client = getClient
     val delete = new HttpDelete(uri)
+    setHeaders(delete, headers)
     val response = client.execute(delete)
     debug("response=" + response)
     response
   }
 
+  private def setHeaders(method: AbstractHttpMessage, headers: Map[String, String]) {
+    for ((k, v) <- headers) {
+      method.setHeader(k, v)
+    }
+  }
+
   implicit def toRichResponse(response: HttpResponse) = new RichHttpResponse(response)
+
+  class RichHttpResponse(response: HttpResponse) {
+    def asString = EntityUtils.toString(response.getEntity)
+  }
+
 }
 
-class RichHttpResponse(response: HttpResponse) {
-  def asString = EntityUtils.toString(response.getEntity)
-}
 

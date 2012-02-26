@@ -21,14 +21,12 @@
 package com.github.amon
 
 import bytecask.Bytecask
-import cluster.{Server, Clustered}
 import rpc._
 import scopt.OptionParser
 import com.google.common.io.Files
 import bytecask.Bytes._
 
-class Amon(port: Int, dir: String) extends Clustered with Logging {
-  val db = new Bytecask(dir)
+class Amon(port: Int, dir: String) extends Node(new Bytecask(dir)) {
   val services = new Services(port)
 
   services.configure {
@@ -36,7 +34,7 @@ class Amon(port: Int, dir: String) extends Clustered with Logging {
       request match {
         case GET(Path(Seg("data" :: id :: Nil))) => {
           debug("get " + id)
-          val value = db.get(id) //TODO: fetch remotely
+          val value = get(request.getMode, id)
           if (!value.isEmpty)
             BinaryResponse(value.get)
           else
@@ -44,12 +42,12 @@ class Amon(port: Int, dir: String) extends Clustered with Logging {
         }
         case POST(Path(Seg("data" :: id :: Nil))) => {
           debug("post " + id)
-          db.put(id, request.content) //TODO: replicate
+          put(request.getMode, id, request.content)
           TextResponse("post: OK")
         }
         case DELETE(Path(Seg("data" :: id :: Nil))) => {
           debug("delete " + id)
-          val value = db.delete(id) //TODO: replicate
+          val value = delete(request.getMode, id)
           if (!value.isEmpty)
             TextResponse("delete: OK")
           else
@@ -62,7 +60,6 @@ class Amon(port: Int, dir: String) extends Clustered with Logging {
         }
         case GET(Path(Seg("ping" :: Nil))) => {
           debug("ping")
-          db.merge()
           TextResponse(pingResponse)
         }
       }
@@ -81,15 +78,8 @@ class Amon(port: Int, dir: String) extends Clustered with Logging {
     stopIntrumenting()
   }
 
-  def membersRegistered(members: Set[Server]) {
-    info("+ " + members)
-  }
-
-  def membersLost(members: Set[Server]) {
-    info("- " + members)
-  }
-
   private def pingResponse = "pong: OK"
+
 }
 
 object AmonStandalone extends Logging {

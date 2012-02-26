@@ -28,4 +28,13 @@ case class Request(req: HttpRequest, context: ChannelHandlerContext, content: Ar
 
   def method = req.getMethod.getName
 
+  def isMultiNode = req.getHeader("mode") == MULTI_NODE.name
+
+  def getMode = if (isMultiNode) MULTI_NODE else SINGLE_NODE
 }
+
+case class Mode(name: String)
+
+object MULTI_NODE extends Mode("MULTI_NODE")
+
+object SINGLE_NODE extends Mode("SINGLE_NODE")

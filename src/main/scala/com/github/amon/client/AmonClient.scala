@@ -20,21 +20,21 @@
 
 package com.github.amon.client
 
-import com.github.amon.rpc.HttpUtil
 import org.apache.http.util.EntityUtils
 import org.apache.http.HttpResponse
+import com.github.amon.rpc.{SINGLE_NODE, MULTI_NODE, Mode, HttpUtil}
 
 class AmonClient(url: String) {
 
-  def put(key: Array[Byte], value: Array[Byte]) = {
+  def put(mode: Mode = MULTI_NODE, key: Array[Byte], value: Array[Byte]) = {
     remote {
-      textualResponse(HttpUtil.post(url + "/db/" + key))
+      textualResponse(HttpUtil.post(url + "/db/" + key, headers(mode)))
     }
   }
 
-  def get(key: Array[Byte]) = {
+  def get(mode: Mode = MULTI_NODE, key: Array[Byte]) = {
     remote {
-      val response = HttpUtil.get(url + "/db/" + key)
+      val response = HttpUtil.get(url + "/db/" + key, headers(mode))
       val status = response.getStatusLine.getStatusCode
       if (status == 200) {
         Right(EntityUtils.toByteArray(response.getEntity))
@@ -42,21 +42,21 @@ class AmonClient(url: String) {
     }
   }
 
-  def delete(key: Array[Byte]) = {
+  def delete(mode: Mode = MULTI_NODE, key: Array[Byte]) = {
     remote {
-      textualResponse(HttpUtil.delete(url + "/db/" + key))
+      textualResponse(HttpUtil.delete(url + "/db/" + key, headers(mode)))
     }
   }
 
-  def merge() {
+  def merge(mode: Mode = MULTI_NODE) {
     remote {
-      textualResponse(HttpUtil.get(url + "/merge"))
+      textualResponse(HttpUtil.get(url + "/merge", headers(mode)))
     }
   }
 
-  def ping() {
+  def ping(mode: Mode = MULTI_NODE) {
     remote {
-      textualResponse(HttpUtil.get(url + "/ping"))
+      textualResponse(HttpUtil.get(url + "/ping", headers(mode)))
     }
   }
 
@@ -75,5 +75,10 @@ class AmonClient(url: String) {
     catch {
       case e: Exception => Left(e)
     }
+  }
+
+  private def headers(mode: Mode) = mode match {
+    case SINGLE_NODE => Map("mode" -> SINGLE_NODE.name)
+    case _ => Map("mode" -> MULTI_NODE.name)
   }
 }
