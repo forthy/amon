@@ -21,47 +21,118 @@
 package com.github.amon
 
 import cluster.{Server, Clustered}
-import bytecask.Bytecask
-import rpc.{MULTI_NODE, SINGLE_NODE, Mode}
+import com.github.bytecask.Bytes._
+import rpc._
+import com.github.bytecask.Utils
+import com.github.amon.rpc.JsonUtil._
 
-class Node(val db: Bytecask) extends Clustered with Logging {
-  val servers = collection.mutable.Set[Server]()
+class Node(port: Int, val store: Store) extends Clustered with Logging {
+  val services = new Services(port)
+  val peers = collection.mutable.Set[Server]()
+
+  services.configure {
+    request =>
+      request match {
+        case GET(Path(Seg("data" :: id :: Nil))) => {
+          debug("get " + id)
+          val value = get(request.getMode, id)
+          if (!value.isEmpty)
+            BinaryResponse(value.get)
+          else
+            EmptyResponse(404)
+        }
+        case POST(Path(Seg("data" :: id :: Nil))) => {
+          debug("post " + id)
+          put(request.getMode, id, request.content)
+          TextResponse(json(Map("message" -> "OK", "action" -> "put", "id" -> id)))
+        }
+        case POST(Path(Seg("data" :: Nil))) => {
+          val id = Amon.nextId
+          debug("post " + id)
+          put(request.getMode, id, request.content)
+          TextResponse(json(Map("message" -> "OK", "action" -> "put", "id" -> id)))
+        }
+        case DELETE(Path(Seg("data" :: id :: Nil))) => {
+          debug("delete " + id)
+          val value = delete(request.getMode, id)
+          if (!value.isEmpty)
+            TextResponse(json(Map("message" -> "OK", "action" -> "delete", "id" -> id)))
+          else
+            EmptyResponse(404)
+        }
+        case GET(Path(Seg("merge" :: Nil))) => {
+          debug("merge")
+          store.merge()
+          TextResponse(json(Map("message" -> "OK", "action" -> "merge")))
+        }
+        case GET(Path(Seg("ping" :: Nil))) => {
+          debug("ping")
+          TextResponse(pingResponse)
+        }
+        case GET(Path(Seg("console" :: Nil))) => {
+          debug("console")
+          TextResponse(consoleResponse)
+        }
+      }
+  }
+
+  def start() {
+    services.start()
+    connectCluster(port)
+    startIntrumenting()
+  }
+
+  def stop() {
+    services.stop()
+    store.close()
+    disconnectCluster()
+    stopIntrumenting()
+  }
+
+  private def pingResponse = json(Map("message" -> "pong", "time" -> Utils.now, "uptime" -> uptime,
+    "id" -> nodeId, "store" -> store.properties))
+
+  private def consoleResponse = json(Map("message" -> "OK", "store" -> store.properties,
+    "nodes" -> peers.mkString("{", ",", "}"), "opcount" -> opCount))
 
   def membersRegistered(members: Set[Server]) {
     info("+ " + members)
-    servers.synchronized(members.foreach(servers.add(_)))
+    peers.synchronized(members.foreach(peers.add(_)))
   }
 
   def membersLost(members: Set[Server]) {
     info("- " + members)
-    servers.synchronized(members.foreach(servers.remove(_)))
+    peers.synchronized(members.foreach(peers.remove(_)))
   }
 
   def put(mode: Mode, key: Array[Byte], value: Array[Byte]) = {
+    tick()
     mode match {
-      case SINGLE_NODE => db.put(key, value)
-      case MULTI_NODE => {
-        db.put(key, value)
+      case INTERNAL => store.put(key, value)
+      case EXTERNAL => {
+        store.put(key, value)
         //TODO: replicate
       }
     }
   }
 
   def get(mode: Mode, key: Array[Byte]) = {
+    tick()
     mode match {
-      case SINGLE_NODE => db.get(key)
-      case MULTI_NODE => {
-        db.get(key)
+      case INTERNAL => store.get(key)
+      case EXTERNAL => {
+        store.get(key)
         //TODO: remote
       }
     }
   }
 
   def delete(mode: Mode, key: Array[Byte]) = {
+    tick()
     mode match {
-      case SINGLE_NODE => db.delete(key)
-      case MULTI_NODE => {
-        db.delete(key)
+      case INTERNAL => store.delete(key)
+      case EXTERNAL => {
+        store.delete(key)
         //TODO: replicate
       }
     }

@@ -22,10 +22,14 @@ package com.github.amon.cluster
 
 import java.util.concurrent.atomic.AtomicLong
 import com.github.amon.Logging
+import java.util.UUID
 
 trait Instrumented extends Logging {
 
   val startTime = new AtomicLong
+  val opCounter = new AtomicLong
+
+  val nodeId = UUID.randomUUID().toString
 
   def startIntrumenting() {
     startTime.set(System.currentTimeMillis())
@@ -35,6 +39,12 @@ trait Instrumented extends Logging {
   }
 
   def uptime = if (startTime.get > 0) System.currentTimeMillis() - startTime.get else 0
+
+  def tick() {
+    opCounter.incrementAndGet()
+  }
+
+  def opCount = opCounter.get
 
   //TODO JMX
 }

@@ -26,8 +26,8 @@ libraryDependencies ++= Seq(
   "org.jgroups" % "jgroups" % "3.0.4.Final",
   "com.codahale" %% "jerkson" % "0.5.0",
   "org.apache.httpcomponents" % "httpclient" % "4.1.2",
-  "com.github.scopt" %% "scopt" % "1.1.3",
   "com.google.guava" % "guava" % "10.0.1",
+  "org.streum" %% "configrity-core" % "0.10.1",
   "org.xerial.snappy" % "snappy-java" % "1.0.4.1",
   "org.scala-tools.testing" %% "scalacheck" % "1.9" % "test",
   "org.scalatest" %% "scalatest" % "1.6.1"% "test"

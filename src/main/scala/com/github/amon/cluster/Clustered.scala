@@ -33,7 +33,7 @@ trait Clustered extends Instrumented {
 
   private def buildUniqueName(port: Int) = ClusterUtils.nextMemberId + ":" + port
 
-  protected def connectCluster(port: Int) {
+  def connectCluster(port: Int) {
     channel.setName(buildUniqueName(port))
     registerReceiver()
   }
@@ -49,9 +49,8 @@ trait Clustered extends Instrumented {
   private def asServer(a: Address) = {
     val s = a.toString
     if (!s.contains(":")) throw new IllegalArgumentException("Invalid address format")
-    val t = s.split(":")
-    val (ip, port) = (t(0), t(2).toInt)
-    Server(ip, port)
+    val Array(ip, _, port, _*) = s.split(":")
+    Server(ip, port.toInt)
   }
 
   private def registerReceiver() {

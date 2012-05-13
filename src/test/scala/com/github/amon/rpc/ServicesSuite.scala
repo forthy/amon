@@ -22,21 +22,21 @@ package com.github.amon.rpc
 
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.{BeforeAndAfterEach, FunSuite}
-import bytecask.Bytes._
+import com.github.bytecask.Bytes._
 import com.github.amon.rpc.HttpUtil._
 
-class BasicSuite extends FunSuite with ShouldMatchers with BeforeAndAfterEach {
+class ServicesSuite extends FunSuite with ShouldMatchers with BeforeAndAfterEach {
 
   test("basic textual response test") {
     val services = new Services(8080)
     services.configure {
       request =>
         request match {
-          case GET(Path(Seg("db" :: id :: Nil))) => {
+          case GET(Path(Seg("data" :: id :: Nil))) => {
             println("Get " + id)
             TextResponse("called with get/" + id)
           }
-          case POST(Path(Seg("db" :: id :: Nil))) => {
+          case POST(Path(Seg("data" :: id :: Nil))) => {
             println("Post " + id)
             TextResponse("called with post/" + id)
           }
@@ -44,11 +44,11 @@ class BasicSuite extends FunSuite with ShouldMatchers with BeforeAndAfterEach {
     }
     services.start()
     try {
-      var rs = HttpUtil.get("http://localhost:8080/db/666").asString
+      var rs = HttpUtil.get("http://localhost:8080/data/666").asString
       assert(rs.contains("666"))
-      rs = HttpUtil.get("http://localhost:8080/db/666").asString
+      rs = HttpUtil.get("http://localhost:8080/data/666").asString
       assert(rs.contains("666"))
-      rs = HttpUtil.post("http://localhost:8080/db/666").asString
+      rs = HttpUtil.post("http://localhost:8080/data/666").asString
       assert(rs.contains("666"))
     } finally {
       services.stop()

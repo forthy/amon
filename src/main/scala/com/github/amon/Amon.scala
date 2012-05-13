@@ -20,87 +20,55 @@
 
 package com.github.amon
 
-import bytecask.Bytecask
-import rpc._
-import scopt.OptionParser
-import com.google.common.io.Files
-import bytecask.Bytes._
+import com.github.bytecask.Bytecask
+import org.streum.configrity.Configuration
+import java.util.UUID
 
-class Amon(port: Int, dir: String) extends Node(new Bytecask(dir)) {
-  val services = new Services(port)
-
-  services.configure {
-    request =>
-      request match {
-        case GET(Path(Seg("data" :: id :: Nil))) => {
-          debug("get " + id)
-          val value = get(request.getMode, id)
-          if (!value.isEmpty)
-            BinaryResponse(value.get)
-          else
-            EmptyResponse(404)
-        }
-        case POST(Path(Seg("data" :: id :: Nil))) => {
-          debug("post " + id)
-          put(request.getMode, id, request.content)
-          TextResponse("post: OK")
-        }
-        case DELETE(Path(Seg("data" :: id :: Nil))) => {
-          debug("delete " + id)
-          val value = delete(request.getMode, id)
-          if (!value.isEmpty)
-            TextResponse("delete: OK")
-          else
-            EmptyResponse(404)
-        }
-        case GET(Path(Seg("merge" :: Nil))) => {
-          debug("merge")
-          db.merge()
-          TextResponse("merge: OK")
-        }
-        case GET(Path(Seg("ping" :: Nil))) => {
-          debug("ping")
-          TextResponse(pingResponse)
-        }
-      }
-  }
+class Amon(nodes: List[Node]) extends Logging {
 
   def start() {
-    services.start()
-    connectCluster(port)
-    startIntrumenting()
+    nodes.foreach(_.start())
   }
 
   def stop() {
-    services.stop()
-    db.close()
-    disconnectCluster()
-    stopIntrumenting()
+    nodes.foreach(_.stop())
   }
 
-  private def pingResponse = "pong: OK"
+}
 
+object Amon {
+  def nextId = UUID.randomUUID().toString
 }
 
 object AmonStandalone extends Logging {
 
   def main(args: Array[String]) {
-    var port = 9090
-    var path = Files.createTempDir().getAbsolutePath
-    val parser = new OptionParser("amon") {
-      intOpt("p", "port", "port", {
-        v: Int => port = v
-      })
-      opt("f", "path", "<path>", "Bytecask work directory", {
-        v: String => path = v
-      })
+    val config = Configuration.loadResource("/amon.conf")
+    val nodes = parseNodes(config[List[String]]("nodes"))
+    val amon = new Amon(nodes)
+    amon.start()
+    System.in.read()
+    amon.stop()
+  }
+
+  private def parseNodes(nodes: List[String]) = nodes.map {
+    s =>
+      val Array(t, p, d, _*) = s.trim.split(":")
+      debug("Creating node: " + p + ":" + t + ":" + d)
+      new Node(p.toInt, createStore(t, d))
+  }
+
+  private def createStore(t: String, d: String) = {
+    t match {
+      case "bytecask" => new BytecaskStore(new Bytecask(dir = d))
+      case _ => throw new IllegalArgumentException("Store type: " + t + " not supported")
     }
-    if (parser.parse(args)) {
-      info("Starting amon: port %s, path: %s".format(port, path))
-      val amon = new Amon(port, path)
-      amon.start()
-      System.in.read()
-      amon.stop()
-    }
+
   }
 }
+
+case class Quorum(n: Int)
+
+object DefaultReadQuorum extends Quorum(2)
+
+object DefaultWriteQuorum extends Quorum(2)

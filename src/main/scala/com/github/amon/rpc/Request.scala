@@ -28,13 +28,21 @@ case class Request(req: HttpRequest, context: ChannelHandlerContext, content: Ar
 
   def method = req.getMethod.getName
 
-  def isMultiNode = req.getHeader("mode") == MULTI_NODE.name
+  def isExternal = req.getHeader("mode") == EXTERNAL.name
 
-  def getMode = if (isMultiNode) MULTI_NODE else SINGLE_NODE
+  def getMode = if (isExternal) EXTERNAL else INTERNAL
 }
 
 case class Mode(name: String)
 
-object MULTI_NODE extends Mode("MULTI_NODE")
+/**
+ * External request is sent from an external API client and may need replication like put, delete etc
+ */
 
-object SINGLE_NODE extends Mode("SINGLE_NODE")
+object EXTERNAL extends Mode("EXTERNAL")
+
+/**
+ * Internal request is sent internally from a node
+ */
+
+object INTERNAL extends Mode("INTERNAL")

@@ -22,19 +22,20 @@ package com.github.amon.client
 
 import org.apache.http.util.EntityUtils
 import org.apache.http.HttpResponse
-import com.github.amon.rpc.{SINGLE_NODE, MULTI_NODE, Mode, HttpUtil}
+import com.github.amon.rpc.{INTERNAL, Mode, HttpUtil}
+import com.github.amon.{DefaultReadQuorum, DefaultWriteQuorum, Quorum}
 
 class AmonClient(url: String) {
 
-  def put(mode: Mode = MULTI_NODE, key: Array[Byte], value: Array[Byte]) = {
+  def put(mode: Mode = INTERNAL, key: Array[Byte], value: Array[Byte], quorum: Quorum = DefaultWriteQuorum) = {
     remote {
-      textualResponse(HttpUtil.post(url + "/db/" + key, headers(mode)))
+      textualResponse(HttpUtil.post(url + "/data/" + key, headers(mode, quorum)))
     }
   }
 
-  def get(mode: Mode = MULTI_NODE, key: Array[Byte]) = {
+  def get(mode: Mode = INTERNAL, key: Array[Byte], quorum: Quorum = DefaultReadQuorum) = {
     remote {
-      val response = HttpUtil.get(url + "/db/" + key, headers(mode))
+      val response = HttpUtil.get(url + "/data/" + key, headers(mode, quorum))
       val status = response.getStatusLine.getStatusCode
       if (status == 200) {
         Right(EntityUtils.toByteArray(response.getEntity))
@@ -42,19 +43,19 @@ class AmonClient(url: String) {
     }
   }
 
-  def delete(mode: Mode = MULTI_NODE, key: Array[Byte]) = {
+  def delete(mode: Mode = INTERNAL, key: Array[Byte], quorum: Quorum = DefaultWriteQuorum) = {
     remote {
-      textualResponse(HttpUtil.delete(url + "/db/" + key, headers(mode)))
+      textualResponse(HttpUtil.delete(url + "/data/" + key, headers(mode, quorum)))
     }
   }
 
-  def merge(mode: Mode = MULTI_NODE) {
+  def merge(mode: Mode = INTERNAL) {
     remote {
       textualResponse(HttpUtil.get(url + "/merge", headers(mode)))
     }
   }
 
-  def ping(mode: Mode = MULTI_NODE) {
+  def ping(mode: Mode = INTERNAL) {
     remote {
       textualResponse(HttpUtil.get(url + "/ping", headers(mode)))
     }
@@ -77,8 +78,5 @@ class AmonClient(url: String) {
     }
   }
 
-  private def headers(mode: Mode) = mode match {
-    case SINGLE_NODE => Map("mode" -> SINGLE_NODE.name)
-    case _ => Map("mode" -> MULTI_NODE.name)
-  }
+  private def headers(mode: Mode, quorum: Quorum = DefaultWriteQuorum) = Map("mode" -> mode.name, "quorum" -> quorum.n.toString)
 }
