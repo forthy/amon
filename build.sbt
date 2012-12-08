@@ -6,7 +6,7 @@ name := "amon"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.9.1"
+scalaVersion := "2.9.2"
 
 resolvers ++= Seq(
   "typesafe" at "http://repo.typesafe.com/typesafe/releases/",
@@ -22,14 +22,13 @@ libraryDependencies ++= Seq(
   "com.github.bytecask" %% "bytecask" % "1.0-SNAPSHOT",
   "com.google.protobuf" % "protobuf-java" % "2.4.1",
   "ch.qos.logback" % "logback-classic" % "0.9.30" % "compile",
-  "io.netty" % "netty" % "3.3.0.Final",
-  "org.jgroups" % "jgroups" % "3.0.4.Final",
-  "com.codahale" %% "jerkson" % "0.5.0",
-  "org.apache.httpcomponents" % "httpclient" % "4.1.2",
+  "io.netty" % "netty" % "3.5.11.Final",
+  "org.jgroups" % "jgroups" % "3.2.4.Final",
+  "com.codahale" % "jerkson_2.9.1" % "0.5.0",
+  "org.apache.httpcomponents" % "httpclient" % "4.2.2",
   "com.google.guava" % "guava" % "10.0.1",
   "org.streum" %% "configrity-core" % "0.10.1",
-  "org.xerial.snappy" % "snappy-java" % "1.0.4.1",
-  "org.scala-tools.testing" %% "scalacheck" % "1.9" % "test",
+  "org.xerial.snappy" % "snappy-java" % "1.0.5-M3",
   "org.scalatest" %% "scalatest" % "1.6.1"% "test"
 )
 
