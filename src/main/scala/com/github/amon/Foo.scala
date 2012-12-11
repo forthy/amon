@@ -18,6 +18,8 @@
 * Time: 12:12 PM
 */
 
+/** WORKING DRAFT **/
+
 package com.github.amon
 
 import com.esotericsoftware.kryo._
